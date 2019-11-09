@@ -1,0 +1,25 @@
+{% extends 'nav_bar.html' %}
+{% block body %}
+  <main class="bd-main">
+    <div class="bd-main-container container">
+      <div class="columns is-centered" style="display: flex;">
+        <div class="column is-three-quarters">
+          <h1 style="margin-top: 20vh; margin-bottom: 1vh;" class="title has-text-centered">Title</h1>
+          <h3 style="margin-top: 1vh; margin-bottom: 10vh;" class="subtitle has-text-centered">Description</h3>
+          <form class="description" id="theform" name="theform" action="" method="POST">
+            <div class="field is-grouped">
+              <p class="control is-expanded">
+                <input class="input is-info is-rounded" type="text" name="entities" placeholder="Entities..." required="">
+              </p>
+              <p class="control">
+                <button class="button is-info is-rounded" type="submit">
+                  <i class="fas fa-search" style="margin-right: 10px;"></i>Search
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock %}
