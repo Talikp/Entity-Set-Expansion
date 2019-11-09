@@ -124,3 +124,5 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'SetExpander/assets'),
 ]
+
+BABELNET_API_KEY = '999d334c-c495-4333-b3c0-1f87ff97b1b0'

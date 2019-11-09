@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="shortcut icon" type="image/png" href="../static/Icon1.png">
+    <link rel="shortcut icon" type="image/png" href="/static/Icon1.png">
     <title>Set Expander</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
@@ -13,7 +13,7 @@
     <div class="container">
       <div class="navbar-brand">
         <a class="navbar-item" href="http://localhost:8000/expander/">
-          <img src="../static/Logo_basic.png" width="112" height="28">
+          <img src="/static/Logo_basic.png" width="112" height="28">
         </a>
   
         <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
@@ -26,7 +26,7 @@
       <div id="navbarBasicExample" class="navbar-menu">
         <div class="navbar-start">
   
-          <a class="navbar-item">
+          <a class="navbar-item" href="https://github.com/MajaGruca/Entity-Set-Expansion">
             Documentation
           </a>
   
@@ -36,7 +36,7 @@
             </a>
   
             <div class="navbar-dropdown">
-              <a class="navbar-item">
+              <a class="navbar-item" href="/expander/about/">
                 About
               </a>
               <a class="navbar-item">
@@ -54,12 +54,12 @@
           <div class="navbar-item">
             <div class="container">
               <div class="buttons">
-                <button class="button is-rounded">
+                <a class="button is-rounded" href="https://github.com/MajaGruca/Entity-Set-Expansion">
                   <span class="icon">
                     <i class="fab fa-github"></i>
                   </span>
                   <span>GitHub</span>
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -68,16 +68,20 @@
               <span class="icon">
                 <i class="fas fa-globe-africa"></i>
               </span>
-              <span>en</span>
+                <a style="color:white" href="https://github.com/MajaGruca/Entity-Set-Expansion">
+                  <span>en</span>
+                </a>
               <i class="fas fa-ellipsis-v"></i>
-              <span>pl</span>
+                <a style="color:white" href=".">
+                  <span>pl</span>
+                </a>
             </div>
           </div>
         </div>
       </div>
     </div>
   </nav>
-  <body style="background-image: url(../static/Background.png); background-position: center; background-color: rgba(255,255,255,0.93); background-blend-mode: lighten; height: 100vh;">
+  <body style="background-image: url(/static/Background.png); background-position: center; background-color: rgba(255,255,255,0.93); background-blend-mode: lighten; height: 100vh;">
   {% block body %}{% endblock %}
   </body>
 </html>
