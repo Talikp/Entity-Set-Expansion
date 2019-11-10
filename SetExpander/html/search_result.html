@@ -2,12 +2,23 @@
 {% block body %}
   <main class="bd-main">
     <div class="bd-main-container container">
-      <div class="columns is-centered" style="display: flex;">
-        <div class="column is-three-quarters">
-          <h1 style="margin-top: 20vh; margin-bottom: 5vh;" class="title has-text-centered">Searched for:</h1>
-          {% for e in entities_list %}
-          <h2 class="subtitle has-text-centered">{{e}}</h2>
-          {% endfor %}
+      <div class="columns is-centered is-vcentered" style="display: flex;">
+        <div class="column is-half">
+          <article class="panel is-info" style="margin-top: 20vh; margin-bottom: 5vh; background-color:white;">
+            <p class="panel-heading">
+              Results
+            </p>
+            <p class="panel-tabs">
+              <a class="is-active">Cathegory1</a>
+              <a>Cathegory2</a>
+            </p>
+            {% for e in entities_list %}
+            <p class="panel-block">
+              {{e}}
+            </p>
+            
+            {% endfor %}
+          </article>
         </div>
       </div>
     </div>
