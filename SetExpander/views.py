@@ -12,15 +12,23 @@ def about(request):
 
 
 def search_result(request):
+
     entities = request.GET.get('entities', '')
     entities = entities.replace(" ", "")
     entities_list = entities.split(",")
     instances_list = []
-    print(entities_list[0])
 
     for entity in entities_list:
+        word = WordSynsets(entity)
+        instances_list.append(word)
 
-        instances_list.append(WordSynsets(entity))
-        get_edges(instances_list[0].ids[0])
+    categories_mapping = find_commmon_categories(instances_list)
+    categories_name_mapping = {}
+    for id in categories_mapping:
+        categories_name_mapping[get_name_from_ID(id)] = categories_mapping[id]
+    name_list = list(categories_name_mapping.keys())
+    active = name_list[0]
 
-    return render(request, 'search_result.html', {'entities_list': entities_list})
+    print("---------------------------------------------------------")
+    print(categories_name_mapping)
+    return render(request, 'search_result.html', {'categories': categories_name_mapping, 'active': active, 'names' : name_list})

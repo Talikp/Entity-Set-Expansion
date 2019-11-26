@@ -1,24 +1,66 @@
 {% extends 'nav_bar.html' %}
+{% block scripts %}
+  {{ block.super }}
+  <script>
+  function openTab(evt, tabName) {
+    var i, x, tablinks;
+    x = document.getElementsByClassName("content-tab");
+    for (i = 0; i < x.length; i++) {
+        x[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tab");
+    for (i = 0; i < x.length; i++) {
+        if(tablinks[i].className.includes("is-active"))
+        {
+          tablinks[i].className = tablinks[i].className.replace(" is-active", "");
+        }
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " is-active";
+    console.log(tabName)
+  }
+  </script>
+{% endblock %}
+
 {% block body %}
   <main class="bd-main">
     <div class="bd-main-container container">
       <div class="columns is-centered is-vcentered" style="display: flex;">
-        <div class="column is-half">
-          <article class="panel is-info" style="margin-top: 20vh; margin-bottom: 5vh; background-color:white;">
+        <div class="column is-three-quarters">
+          <article class="panel is-info" style="margin-top: 20vh; margin-bottom: 0vh; background-color:white; text-align: center;">
             <p class="panel-heading">
               Results
             </p>
-            <p class="panel-tabs">
-              <a class="is-active">Cathegory1</a>
-              <a>Cathegory2</a>
-            </p>
-            {% for e in entities_list %}
-            <p class="panel-block">
-              {{e}}
-            </p>
-            
-            {% endfor %}
           </article>
+          <div class="result" style="background-color:white">
+            <nav class="tabs is-boxed is-fullwidth" style="background-color:rgb(50, 152, 220); margin-bottom: 0vh; font-weight: bold;">
+              <div class="container">
+                <ul>
+                {% for key in names %}
+                  {% if key == active %}
+                  <li class="tab is-active" onclick="openTab(event,'{{key}}')"><a>{{key}}</a></li>
+                  {% else %}
+                  <li class="tab" onclick="openTab(event,'{{key}}')"><a>{{key}}</a></li>
+                  {% endif %}
+                {% endfor %}
+                </ul>
+              </div>
+            </nav>
+            <div class="container section" style="background-color:white;">
+              {% for key, values in categories.items %}
+                {% if key == active %}
+                  <div id="{{key}}" class="content-tab" style="display:block">
+                {% else %}
+                  <div id="{{key}}" class="content-tab" style="display:none">
+                {% endif %}
+                {% for value in values %}
+                    <h3 class="subtitle">{{value}}</h3>
+                    <hr>
+                {% endfor %}
+                  </div>
+              {% endfor %}
+            </div>
+          </div>
         </div>
       </div>
     </div>
