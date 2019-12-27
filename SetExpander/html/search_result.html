@@ -27,7 +27,13 @@
     <div class="bd-main-container container">
       <div class="columns is-centered is-vcentered" style="display: flex;">
         <div class="column is-three-quarters">
-          <article class="panel is-info" style="margin-top: 20vh; margin-bottom: 0vh; background-color:white; text-align: center;">
+          <h1 style="margin-top: 5vh; margin-bottom: 3vh;" class="subtitle has-text-centered">Results for:</h1>
+          <h3 style="margin-top: 1vh; margin-bottom: 5vh;" class="subtitle has-text-centered">
+            {% for en in entries %}
+              {{en}}
+            {% endfor %}
+          </h3>
+          <article class="panel is-info" style="margin-bottom: 0vh; background-color:white; text-align: center;">
             <p class="panel-heading">
               Results
             </p>
@@ -55,6 +61,7 @@
                 {% endif %}
                 {% for value in values %}
                     <h3 class="subtitle">{{value}}</h3>
+                    <!--<a class="subtitle" style="color:black" href="http://live.babelnet.org/synset?word={{value}}&lang=EN">{{value}}</a>-->
                     <hr>
                 {% endfor %}
                   </div>
