@@ -1,4 +1,3 @@
-# Entity-Set-Expansion
 ## Running
 Project is based on Python3. It is recommended to use version not older than 3.3.
 ### Creating virtual environment
