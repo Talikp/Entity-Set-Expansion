@@ -1,0 +1,20 @@
+<sparql xmlns="http://www.w3.org/2005/sparql-results#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2001/sw/DataAccess/rf1/result2.xsd">
+ <head>
+  <variable name="synset"/>
+  <variable name="broader"/>
+ </head>
+ <results distinct="false" ordered="true">
+  <result>
+   <binding name="synset"><uri>http://babelnet.org/rdf/s03107993n</uri></binding>
+   <binding name="broader"><uri>http://babelnet.org/rdf/s00012195n</uri></binding>
+  </result>
+  <result>
+   <binding name="synset"><uri>http://babelnet.org/rdf/s03241725n</uri></binding>
+   <binding name="broader"><uri>http://babelnet.org/rdf/s00054416n</uri></binding>
+  </result>
+  <result>
+   <binding name="synset"><uri>http://babelnet.org/rdf/s03241725n</uri></binding>
+   <binding name="broader"><uri>http://babelnet.org/rdf/s00054417n</uri></binding>
+  </result>
+ </results>
+</sparql>

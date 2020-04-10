@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'bulma',
     'jquery_ui',
     'SetExpander',
+    'silk'
 ]
 
 MIDDLEWARE = [
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'silk.middleware.SilkyMiddleware'
 ]
 
 ROOT_URLCONF = 'urls'
@@ -127,3 +129,7 @@ STATICFILES_DIRS = [
 ]
 
 BABELNET_API_KEY = '999d334c-c495-4333-b3c0-1f87ff97b1b0'
+MEASURE_TIME = False
+SILKY_PYTHON_PROFILER = False
+SILKY_PYTHON_PROFILER_BINARY = True
+SILKY_PYTHON_PROFILER_RESULT_PATH = '/tmp/'
