@@ -1,5 +1,5 @@
 from django.test import TestCase
-from SetExpander.algorithm.WordSynsets import Synset, sparql_create_query_string, WordSynsets, find_commmon_categories
+from SetExpander.algorithm.WordSynsets import *
 import os
 import xml.etree.ElementTree as ET
 

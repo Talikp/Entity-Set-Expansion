@@ -146,11 +146,11 @@ class Synset:
 
 
 def sparql_create_query_string(category, source_ids, address):
-    query_string = "PREFIX rdfs: <http://babelnet.org/rdf/> SELECT ?expand WHERE { ?expand skos:broader <" + address + \
+    query_string = "PREFIX rdfs: <http://babelnet.org/rdf/> SELECT ?expand ?entry WHERE { ?expand skos:broader <" + address + \
                    category.split(":")[1] + "> . "
     query_string += " UNION ".join(
         map(lambda synset: "{ ?expand skos:related <" + address + synset.id.split(":")[1] + "> }", source_ids))
-
+    query_string += r' . ?expand skos:exactMatch ?entry . FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) .'
     query_string += " } ORDER BY str(?expand) LIMIT 10"
     return query_string
 
@@ -204,25 +204,20 @@ def sparql_expand_parallel(category_item):
     results = sparql.query().convert()
     results = results.toxml()
 
-    xmldoc = minidom.parseString(results)
-    itemlist = xmldoc.getElementsByTagName('binding')
+    root = ET.fromstring(results)
 
-    # print(results)
-    if len(itemlist) == 0:
-        return None
+    entry_prefix = "http://dbpedia.org/resource/"
 
-    for s in itemlist:
-        if s.attributes['name'].value != "expand":
-            continue
-        instance = s.getElementsByTagName("uri")[0].firstChild.data
-        if instance.startswith(address):
-            instance = "bn:" + instance[len(address):]
-            if len(instances) < 6:
-                name = get_name_from_ID(instance)
-                if instance not in source_ids and len(name) > 0:  # and " " not in name:
-                    instances.add(name.capitalize())
-            else:
-                break
+    namespace = "{http://www.w3.org/2005/sparql-results#}"
+    for result in root.find(namespace + "results"):
+        entry = result.find(namespace + "binding[@name='entry']")
+        # expand = result.find(namespace + "binding[@name='expand']")
+        entry_name = entry.find(namespace + "uri")
+        if entry_name is not None and entry_name.text.startswith(entry_prefix):
+            instances.add(entry_name.text.strip(entry_prefix).capitalize())
+
+    if root.find(namespace + "results") is None:
+        return category, None
 
     return category, instances
 
