@@ -192,6 +192,40 @@ def sparql_expand(category, entries, source_ids):
 
     return instances
 
+def sparql_expand_parallel(category_item):
+    category, source_ids = category_item
+    instances = set([])
+    address = "http://babelnet.org/rdf/s"
+    query_string = sparql_create_query_string(category, source_ids, address)
+
+    sparql = SPARQLWrapper("https://babelnet.org/sparql/")
+    sparql.setQuery(query_string)  # LIMIT " + str(limit))
+    sparql.addParameter("key", settings.BABELNET_API_KEY)
+    results = sparql.query().convert()
+    results = results.toxml()
+
+    xmldoc = minidom.parseString(results)
+    itemlist = xmldoc.getElementsByTagName('binding')
+
+    # print(results)
+    if len(itemlist) == 0:
+        return None
+
+    for s in itemlist:
+        if s.attributes['name'].value != "expand":
+            continue
+        instance = s.getElementsByTagName("uri")[0].firstChild.data
+        if instance.startswith(address):
+            instance = "bn:" + instance[len(address):]
+            if len(instances) < 6:
+                name = get_name_from_ID(instance)
+                if instance not in source_ids and len(name) > 0:  # and " " not in name:
+                    instances.add(name.capitalize())
+            else:
+                break
+
+    return category, instances
+
 
 @timing
 def find_commmon_categories(word_list):
