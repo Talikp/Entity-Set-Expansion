@@ -6,8 +6,14 @@ import xml.etree.ElementTree as ET
 
 class SetExpandTestCase(TestCase):
     def test_create_query_string(self):
-        expected_str = r"PREFIX rdfs: <http://babelnet.org/rdf/> SELECT ?expand WHERE { ?expand skos:broader <http://babelnet.org/rdf/s14129567n> . { ?expand skos:related <http://babelnet.org/rdf/s00048043n> } UNION { ?expand skos:related <http://babelnet.org/rdf/s01713224n> } } ORDER BY str(?expand) LIMIT 10"
-
+        expected_str = """PREFIX rdfs: <http://babelnet.org/rdf/> 
+SELECT ?expand ?entry WHERE {
+    ?expand skos:broader <http://babelnet.org/rdf/s14129567n> . 
+{ ?expand skos:related <http://babelnet.org/rdf/s00048043n> }
+ UNION { ?expand skos:related <http://babelnet.org/rdf/s01713224n> } . 
+    ?expand skos:exactMatch ?entry . 
+    FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) . 
+} ORDER BY str(?expand) LIMIT 10"""
         address = "http://babelnet.org/rdf/s"
         category = 'bn:14129567n'
         synset1 = Synset(id="bn:00048043n", value=2183,
@@ -15,7 +21,8 @@ class SetExpandTestCase(TestCase):
         synset2 = Synset(id='bn:01713224n', value=1898,
                          edges={'bn:00725358n', 'bn:00064652n', 'bn:14253335n', 'bn:01431715n', 'bn:00182120n',
                                 'bn:03782293n', 'bn:00044037n', 'bn:01652181n', 'bn:01246770n', 'bn:14129567n'})
-        self.assertEqual(sparql_create_query_string(category, [synset1, synset2], address), expected_str)
+        actual_str = sparql_create_query_string(category, [synset1, synset2], address)
+        self.assertEqual(actual_str, expected_str)
 
     def test_synset_str(self):
         expected_str = r"Synset('1',{'1'},1)"

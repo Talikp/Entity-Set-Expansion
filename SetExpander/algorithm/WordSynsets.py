@@ -25,7 +25,6 @@ def timing(f):
 
 class WordSynsets:
 
-    @timing
     def __init__(self, name, all_edges, ids):
         self.name = str(name)
         self.all_edges = all_edges
@@ -59,7 +58,14 @@ class WordSynsets:
     @timing
     def from_sparql(cls, word):
         name = str(word)
-        query_string = 'SELECT DISTINCT ?synset ?broader WHERE {{ ?entries a lemon:LexicalEntry . ?entries lemon:sense ?sense . ?sense lemon:reference ?synset . ?entries rdfs:label "{}"@en . ?synset a skos:Concept .  ?synset skos:broader ?broader }}'.format(name)
+        query_string = """SELECT DISTINCT ?synset ?broader WHERE {{ 
+    ?entries a lemon:LexicalEntry . 
+    ?entries lemon:sense ?sense . 
+    ?sense lemon:reference ?synset . 
+    ?entries rdfs:label "{}"@en . 
+    ?synset a skos:Concept .  
+    ?synset skos:broader ?broader 
+}}""".format(name)
 
         sparql = SPARQLWrapper("https://babelnet.org/sparql/")
         sparql.setQuery(query_string)
@@ -146,12 +152,18 @@ class Synset:
 
 
 def sparql_create_query_string(category, source_ids, address):
-    query_string = "PREFIX rdfs: <http://babelnet.org/rdf/> SELECT ?expand ?entry WHERE { ?expand skos:broader <" + address + \
-                   category.split(":")[1] + "> . "
-    query_string += " UNION ".join(
+    query_string = """PREFIX rdfs: <http://babelnet.org/rdf/> 
+SELECT ?expand ?entry WHERE {{
+    ?expand skos:broader <{}{}> . 
+""".format(address, category.split(":")[1])
+
+    query_string += "\n UNION ".join(
         map(lambda synset: "{ ?expand skos:related <" + address + synset.id.split(":")[1] + "> }", source_ids))
-    query_string += r' . ?expand skos:exactMatch ?entry . FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) .'
-    query_string += " } ORDER BY str(?expand) LIMIT 10"
+    query_string += """ . 
+    ?expand skos:exactMatch ?entry . 
+    FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) . 
+} ORDER BY str(?expand) LIMIT 10"""
+    
     return query_string
 
 
