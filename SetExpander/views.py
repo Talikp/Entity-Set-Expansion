@@ -3,6 +3,8 @@ from SetExpander.algorithm.WordSynsets import *
 from silk.profiling.profiler import silk_profile
 from multiprocessing import Pool
 
+from SetExpander.algorithm.functions import sparql_expand_parallel, find_commmon_categories, get_name_from_ID
+
 
 def main_page(request):
     return render(request, 'main_page.html', {})

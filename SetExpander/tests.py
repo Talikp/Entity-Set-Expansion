@@ -3,6 +3,8 @@ from SetExpander.algorithm.WordSynsets import *
 import os
 import xml.etree.ElementTree as ET
 
+from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories
+
 
 class SetExpandTestCase(TestCase):
     def test_create_query_string(self):
