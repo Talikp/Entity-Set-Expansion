@@ -1,8 +1,12 @@
-from django.conf import settings
-import requests
-from SPARQLWrapper import SPARQLWrapper
 import time
 import xml.etree.ElementTree as ET
+
+import networkx as nx
+import requests
+from SPARQLWrapper import SPARQLWrapper
+from django.conf import settings
+
+from SetExpander.algorithm.SparqlJSONWrapper import SparqlJSONWrapper
 
 babelnet_url = "https://babelnet.io/v5/"
 
@@ -51,6 +55,92 @@ class WordSynsets:
                 all_edges = all_edges | synset.edges
 
         return WordSynsets(name, all_edges, ids)
+
+    @classmethod
+    @timing
+    def from_sparql_json(cls, word, deep=1, named_entities_only=False):
+        name = str(word)
+        deep = min(deep, 5)
+        deep = max(deep, 1)
+
+        synset_type_subquery = """FILTER(
+        ?synsetType="NE"
+    ) ."""
+        synset_type_subquery = synset_type_subquery if named_entities_only else ""
+        categories_subquery = "?synset skos:broader ?X1 . "
+        for level in range(2, deep + 1):
+            categories_subquery += """
+    ?X{} skos:broader ?X{} . """.format(level - 1, level)
+
+        categories_subquery += """
+    { ?A rdfs:label ?label. ?synset bn-lemon:synsetID ?B }
+    UNION
+    { ?synset bn-lemon:synsetID ?A . ?X1 bn-lemon:synsetID ?B }"""
+
+        for level in range(2, deep + 1):
+            categories_subquery += """
+    UNION
+    {{ ?X{} bn-lemon:synsetID ?A . ?X{} bn-lemon:synsetID ?B }}""".format(level - 1, level)
+
+        query_string = """SELECT DISTINCT ?A ?B WHERE {{
+    ?entries a lemon:LexicalEntry .
+    ?entries lemon:sense ?sense .
+    ?sense lemon:reference ?synset .
+    ?synset a skos:Concept .
+    ?entries rdfs:label ?label .
+    ?synset bn-lemon:synsetType ?synsetType .
+    FILTER(
+        ?label="{}"@en ||
+        ?label="{}"@en ||
+        ?label="{}"@en
+    ) .
+    {}
+    {}
+}}""".format(name.capitalize(), name.lower(), name.upper(), synset_type_subquery, categories_subquery)
+        sparql = SparqlJSONWrapper()
+        json_data = sparql.query(query_string)
+        synset_trees = WordSynsets.parse_json(json_data)
+        all_edges = set()
+        synsets = []
+        for synset, tree in synset_trees.items():
+            synsets.append(Synset(synset, tree, len(tree.nodes)))
+            all_edges = all_edges | (tree.nodes - {synset})
+
+        return WordSynsets(name, all_edges, synsets)
+
+    @classmethod
+    def parse_json(cls, json_data):
+        ids = []
+        G = nx.DiGraph()
+
+        def extract_tree(G, root):
+            tree = nx.DiGraph()
+            tree.add_node(root, root=True)
+            nodes = [root]
+            visited = {root}
+            while len(nodes) > 0:
+                current_node = nodes.pop()
+                for next_node in G.neighbors(current_node):
+                    if next_node in visited:
+                        continue
+                    tree.add_edge(current_node, next_node)
+                    nodes.append(next_node)
+                    visited.add(next_node)
+            return tree
+
+        for result in json_data.get("results", {"bindings": []})["bindings"]:
+            try:
+                if result['A']['type'] == "uri":
+                    ids.append(result['B']['value'])
+                    G.add_node(result['B']['value'])
+                else:
+                    G.add_edge(result['A']['value'], result['B']['value'])
+            except KeyError:
+                continue
+        result = {}
+        for synset in ids:
+            result[synset] = extract_tree(G, synset)
+        return result
 
     @classmethod
     @timing
@@ -137,7 +227,6 @@ class Synset:
         for edge in request.json():
             if edge["pointer"]["shortName"] == "is-a" and edge["target"][-1] == 'n':  # edge["pointer"]["shortName"] != "related" and edge["pointer"]["shortName"] != "color"
                 edges.add(edge["target"])
-                # print(edge["pointer"]["shortName"])
         return Synset(id, edges, value)
 
     def __str__(self):
@@ -147,5 +236,3 @@ class Synset:
         if isinstance(o, Synset):
             return self.id == o.id and self.edges == o.edges
         return False
-
-

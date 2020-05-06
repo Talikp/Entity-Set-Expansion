@@ -1,12 +1,16 @@
-from django.test import TestCase
-from SetExpander.algorithm.WordSynsets import *
+import json
 import os
 import xml.etree.ElementTree as ET
+from unittest.mock import patch
 
+from django.test import TestCase
+
+from SetExpander.algorithm.WordSynsets import WordSynsets, Synset
 from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories
 
 
 class SetExpandTestCase(TestCase):
+
     def test_create_query_string(self):
         expected_str = """PREFIX rdfs: <http://babelnet.org/rdf/> 
 SELECT ?expand ?entry WHERE {
@@ -25,20 +29,6 @@ SELECT ?expand ?entry WHERE {
                                 'bn:03782293n', 'bn:00044037n', 'bn:01652181n', 'bn:01246770n', 'bn:14129567n'})
         actual_str = sparql_create_query_string(category, [synset1, synset2], address)
         self.assertEqual(actual_str, expected_str)
-
-    def test_synset_str(self):
-        expected_str = r"Synset('1',{'1'},1)"
-        actual_str = Synset("1", {'1'}, 1).__str__()
-        self.assertEqual(expected_str, actual_str)
-        synset = eval(actual_str)
-        self.assertEqual(synset.__str__(), actual_str)
-
-    def test_wordsynsets_str(self):
-        expected_str = r"WordSynsets('Java',{'1'},[Synset('1',{'1'},1)])"
-        actual_str = WordSynsets('Java', {'1'}, [Synset('1', {'1'}, 1)]).__str__()
-        self.assertEqual(expected_str, actual_str)
-        synset = eval(actual_str)
-        self.assertEqual(synset.__str__(), actual_str)
 
     def test_find_common_categories(self):
         wordsynset1 = WordSynsets('Java',
@@ -119,8 +109,51 @@ SELECT ?expand ?entry WHERE {
         categories = find_commmon_categories(word_list)
         self.assertEqual(connection_mapping, categories)
 
+
+class WordSynsetsTestCase(TestCase):
+
+    @patch("SetExpander.algorithm.SparqlJSONWrapper.SparqlJSONWrapper.query")
+    def test_wordsynsets_from_json(self, mock_query):
+        TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), 'test_files/word_sparql_graph_small.json')
+        json_file = open(TESTDATA_FILENAME, 'r')
+        mock_data = json.load(json_file)
+        json_file.close()
+
+        mock_query.return_value = mock_data
+        word = WordSynsets.from_sparql_json("java", 4, True)
+        query = """SELECT DISTINCT ?A ?B WHERE {
+    ?entries a lemon:LexicalEntry .
+    ?entries lemon:sense ?sense .
+    ?sense lemon:reference ?synset .
+    ?synset a skos:Concept .
+    ?entries rdfs:label ?label .
+    ?synset bn-lemon:synsetType ?synsetType .
+    FILTER(
+        ?label="Java"@en ||
+        ?label="java"@en ||
+        ?label="JAVA"@en
+    ) .
+    FILTER(
+        ?synsetType="NE"
+    ) .
+    ?synset skos:broader ?X1 . 
+    ?X1 skos:broader ?X2 . 
+    ?X2 skos:broader ?X3 . 
+    ?X3 skos:broader ?X4 . 
+    { ?A rdfs:label ?label. ?synset bn-lemon:synsetID ?B }
+    UNION
+    { ?synset bn-lemon:synsetID ?A . ?X1 bn-lemon:synsetID ?B }
+    UNION
+    { ?X1 bn-lemon:synsetID ?A . ?X2 bn-lemon:synsetID ?B }
+    UNION
+    { ?X2 bn-lemon:synsetID ?A . ?X3 bn-lemon:synsetID ?B }
+    UNION
+    { ?X3 bn-lemon:synsetID ?A . ?X4 bn-lemon:synsetID ?B }
+}"""
+        mock_query.assert_called_with(query)
+
     def test_wordsynsets_from_xml(self):
-        TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), 'word_sparql_small.xml')
+        TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), 'test_files/word_sparql_small.xml')
         root = ET.parse(TESTDATA_FILENAME).getroot()
         namespace = "{http://www.w3.org/2005/sparql-results#}"
 
@@ -130,7 +163,3 @@ SELECT ?expand ?entry WHERE {
                                 Synset('bn:03241725n',
                                        {'bn:00054416n', 'bn:00054417n'}, 2)])
         self.assertEqual(expected, java_word)
-
-    # def test_wordsynsets_from_sparql(self):
-    #     java_word = WordSynsets.from_sparql("Java")
-    #     print(java_word)

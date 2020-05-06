@@ -1,8 +1,9 @@
-from django.shortcuts import render
-from SetExpander.algorithm.WordSynsets import *
-from silk.profiling.profiler import silk_profile
 from multiprocessing import Pool
 
+from django.shortcuts import render
+from silk.profiling.profiler import silk_profile
+
+from SetExpander.algorithm.WordSynsets import *
 from SetExpander.algorithm.functions import sparql_expand_parallel, find_commmon_categories, get_name_from_ID
 
 
@@ -17,14 +18,13 @@ def about(request):
 @silk_profile()
 def search_result(request):
     entities = request.GET.get('entities', '')
-    entities = entities.replace(" ", "")
-    entities_list = entities.split(",")
+    entities_list = entities.replace(" ", "").split(",")
     instances_list = []
     expansion_mapping = {}
 
     for entity in entities_list:
         # word = WordSynsets.from_http(entity)
-        word = WordSynsets.from_sparql(entity)
+        word = WordSynsets.from_sparql_json(entity)
         instances_list.append(word)
 
     categories_mapping = find_commmon_categories(instances_list)
