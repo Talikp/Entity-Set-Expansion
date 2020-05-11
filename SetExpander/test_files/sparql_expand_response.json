@@ -1,0 +1,13 @@
+
+{ "head": { "link": [], "vars": ["expand", "entry"] },
+  "results": { "distinct": false, "ordered": true, "bindings": [
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s01673672n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/C_Sharp_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s01673672n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/C_Sharp_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s01713224n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Python_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s01928079n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Ruby_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s01928079n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Ruby_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s02196922n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Smalltalk" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s02196922n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Smalltalk" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s02501169n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Ceylon_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s02501169n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Ceylon_(programming_language)" }},
+    { "expand": { "type": "uri", "value": "http://babelnet.org/rdf/s03226232n" }	, "entry": { "type": "uri", "value": "http://dbpedia.org/resource/Lua_(programming_language)" }} ] } }

@@ -5,10 +5,12 @@ import requests
 from SPARQLWrapper import SPARQLWrapper
 from django.conf import settings
 
-from SetExpander.algorithm.WordSynsets import timing, babelnet_url, Synset
+from SetExpander.algorithm.WordSynsets import timing, babelnet_url, Synset, SparqlJSONWrapper
 
 
-def sparql_create_query_string(category, source_ids, address):
+def sparql_create_query_string(category, source_ids):
+    address = "http://babelnet.org/rdf/s"
+
     query_string = """PREFIX rdfs: <http://babelnet.org/rdf/> 
 SELECT ?expand ?entry WHERE {{
     ?expand skos:broader <{}{}> . 
@@ -31,7 +33,7 @@ def sparql_expand(category, entries, source_ids):
     limit = len(entries) + 100
     # ?relations, (count(?relations) as ?rel)     ORDER BY DESC(?rel)
 
-    query_string = sparql_create_query_string(category, source_ids, address)
+    query_string = sparql_create_query_string(category, source_ids)
 
     sparql = SPARQLWrapper("https://babelnet.org/sparql/")
     sparql.setQuery(query_string)  # LIMIT " + str(limit))
@@ -67,31 +69,26 @@ def sparql_expand_parallel(category_item):
 
     category, source_ids = category_item
     instances = set([])
-    address = "http://babelnet.org/rdf/s"
-    query_string = sparql_create_query_string(category, source_ids, address)
+    query_string = sparql_create_query_string(category, source_ids)
 
-    sparql = SPARQLWrapper("https://babelnet.org/sparql/")
-    sparql.setQuery(query_string)  # LIMIT " + str(limit))
-    sparql.addParameter("key", settings.BABELNET_API_KEY)
-    results = sparql.query().convert()
-    results = results.toxml()
-
-    root = ET.fromstring(results)
-
+    spaqrl = SparqlJSONWrapper()
+    json_data = spaqrl.query(query_string)
     entry_prefix = "http://dbpedia.org/resource/"
 
-    namespace = "{http://www.w3.org/2005/sparql-results#}"
-    for result in root.find(namespace + "results"):
-        entry = result.find(namespace + "binding[@name='entry']")
-        # expand = result.find(namespace + "binding[@name='expand']")
-        entry_name = entry.find(namespace + "uri")
-        if entry_name is not None and entry_name.text.startswith(entry_prefix):
-            instances.add(entry_name.text.strip(entry_prefix).capitalize())
+    for result in json_data.get("results", {"bindings": []})["bindings"]:
+        try:
+            entry_name = result['entry']['value']
+            if entry_name is not None and entry_name.startswith(entry_prefix):
+                instances.add(entry_name.strip(entry_prefix).capitalize())
+
+        except KeyError:
+            continue
 
     time2 = time.time()
     if settings.MEASURE_TIME:
         print('{:s} function took {:.3f} ms'.format("sparql_expand_parallel", (time2 - time1) * 1000.0))
-    if root.find(namespace + "results") is None:
+
+    if "results" not in json_data:
         return category, None
 
     return category, instances

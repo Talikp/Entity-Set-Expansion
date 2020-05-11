@@ -56,14 +56,13 @@ SELECT ?expand ?entry WHERE {
     ?expand skos:exactMatch ?entry . 
     FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) . 
 } ORDER BY str(?expand) LIMIT 10"""
-        address = "http://babelnet.org/rdf/s"
         category = 'bn:14129567n'
         synset1 = Synset(id="bn:00048043n", value=2183,
                          edges={'bn:00058449n', 'bn:14253335n', 'bn:14129567n', 'bn:01246770n'})
         synset2 = Synset(id='bn:01713224n', value=1898,
                          edges={'bn:00725358n', 'bn:00064652n', 'bn:14253335n', 'bn:01431715n', 'bn:00182120n',
                                 'bn:03782293n', 'bn:00044037n', 'bn:01652181n', 'bn:01246770n', 'bn:14129567n'})
-        actual_str = sparql_create_query_string(category, [synset1, synset2], address)
+        actual_str = sparql_create_query_string(category, [synset1, synset2])
         self.assertEqual(actual_str, expected_str)
 
     def test_find_common_categories(self):
@@ -145,17 +144,20 @@ SELECT ?expand ?entry WHERE {
         categories = find_commmon_categories(word_list)
         self.assertEqual(connection_mapping, categories)
 
-    @patch("SetExpander.algorithm.functions.SPARQLWrapper")
-    def test_sparql_expand(self, mock_sparqlwrapper):
+    @patch("SetExpander.algorithm.SparqlJSONWrapper.SparqlJSONWrapper.query")
+    def test_sparql_expand(self, mock_query):
         item = 'bn:14253335n', [
             Synset('bn:00048043n', {'bn:00058449n', 'bn:14129567n', 'bn:01246770n', 'bn:14253335n'}, 2183),
             Synset('bn:01713224n',
                    {'bn:03782293n', 'bn:01246770n', 'bn:14129567n', 'bn:14253335n', 'bn:00725358n', 'bn:00064652n',
                     'bn:00044037n', 'bn:01431715n', 'bn:01652181n', 'bn:00182120n'}, 1898)]
-        mock_sparqlwrapper.return_value = SPARQLWrapperMock(ET.tostring(read_xml_test_data('sparql_expand_response.xml')))
+        mock_query.return_value = read_json_test_data('sparql_expand_response.json')
         actual = sparql_expand_parallel(item)
 
-        self.assertEqual(actual[1], {'Smalltalk', 'Lua_(programming_language)', 'C_sharp_(programming_language)', 'Ruby_(programming_language)', 'Python_(programming_language)', 'Ceylon_(programming_language)'})
+        self.assertEqual(actual[1], {'Smalltalk', 'Lua_(programming_language)', 'C_sharp_(programming_language)',
+                                     'Ruby_(programming_language)', 'Python_(programming_language)',
+                                     'Ceylon_(programming_language)'})
+
 
 class WordSynsetsTestCase(TestCase):
 
