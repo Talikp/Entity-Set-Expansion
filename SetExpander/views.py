@@ -23,12 +23,11 @@ def search_result(request):
     expansion_mapping = {}
 
     for entity in entities_list:
-        # word = WordSynsets.from_http(entity)
+        # word = WordSynsets.from_sparql(entity)
         word = WordSynsets.from_sparql_json(entity)
         instances_list.append(word)
 
     categories_mapping = find_commmon_categories(instances_list)
-
     with Pool(4) as pool:
         expanded = pool.map(sparql_expand_parallel, categories_mapping.items())
         for id, founded in expanded:

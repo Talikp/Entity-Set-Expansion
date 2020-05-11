@@ -4,8 +4,8 @@ import xml.etree.ElementTree as ET
 import networkx as nx
 import requests
 from SPARQLWrapper import SPARQLWrapper
+from collections import deque
 from django.conf import settings
-
 from SetExpander.algorithm.SparqlJSONWrapper import SparqlJSONWrapper
 
 babelnet_url = "https://babelnet.io/v5/"
@@ -27,10 +27,10 @@ def timing(f):
 
 class WordSynsets:
 
-    def __init__(self, name, all_edges, ids):
+    def __init__(self, name, all_edges, synsets):
         self.name = str(name)
         self.all_edges = all_edges
-        self.ids = ids
+        self.synsets = synsets
 
     @classmethod
     @timing
@@ -59,9 +59,11 @@ class WordSynsets:
     @classmethod
     @timing
     def from_sparql_json(cls, word, deep=1, named_entities_only=False):
+        MIN_DEPTH = 1
+        MAX_DEPTH = 5
         name = str(word)
-        deep = min(deep, 5)
-        deep = max(deep, 1)
+        deep = min(deep, MAX_DEPTH)
+        deep = max(deep, MIN_DEPTH)
 
         synset_type_subquery = """FILTER(
         ?synsetType="NE"
@@ -103,27 +105,29 @@ class WordSynsets:
         all_edges = set()
         synsets = []
         for synset, tree in synset_trees.items():
-            synsets.append(Synset(synset, tree, len(tree.nodes)))
+            synsets.append(Synset(synset, tree, tree.number_of_nodes()))
             all_edges = all_edges | (tree.nodes - {synset})
 
         return WordSynsets(name, all_edges, synsets)
 
     @classmethod
     def parse_json(cls, json_data):
-        ids = []
+        synsets_ids = []
         G = nx.DiGraph()
 
         def extract_tree(G, root):
             tree = nx.DiGraph()
-            tree.add_node(root, root=True)
-            nodes = [root]
+            tree.add_node(root, root=True, depth=0)
+            nodes = deque([root])
             visited = {root}
             while len(nodes) > 0:
-                current_node = nodes.pop()
+                current_node = nodes.popleft()
+                current_depth = tree.nodes[current_node]['depth']
                 for next_node in G.neighbors(current_node):
                     if next_node in visited:
                         continue
                     tree.add_edge(current_node, next_node)
+                    tree.nodes[next_node]['depth'] = current_depth + 1
                     nodes.append(next_node)
                     visited.add(next_node)
             return tree
@@ -131,14 +135,15 @@ class WordSynsets:
         for result in json_data.get("results", {"bindings": []})["bindings"]:
             try:
                 if result['A']['type'] == "uri":
-                    ids.append(result['B']['value'])
+                    synsets_ids.append(result['B']['value'])
                     G.add_node(result['B']['value'])
                 else:
                     G.add_edge(result['A']['value'], result['B']['value'])
             except KeyError:
                 continue
+
         result = {}
-        for synset in ids:
+        for synset in synsets_ids:
             result[synset] = extract_tree(G, synset)
         return result
 
@@ -192,14 +197,14 @@ class WordSynsets:
 
     def __str__(self):
         result = "WordSynsets('{}',{},".format(self.name, self.all_edges)
-        synsets = ",".join(map(Synset.__str__, self.ids))
+        synsets = ",".join(map(Synset.__str__, self.synsets))
         result += "[{:s}])".format(synsets)
 
         return result
 
     def __eq__(self, o: object) -> bool:
         if isinstance(o, WordSynsets):
-            return self.name == o.name and self.all_edges == o.all_edges and self.ids == o.ids
+            return self.name == o.name and self.all_edges == o.all_edges and self.synsets == o.synsets
         return False
 
 

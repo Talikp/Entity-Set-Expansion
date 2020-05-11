@@ -6,7 +6,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from SetExpander.algorithm.WordSynsets import WordSynsets, Synset
-from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories
+from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories, compare_synsets, find_common_categories
 
 
 class SetExpandTestCase(TestCase):
@@ -163,3 +163,31 @@ class WordSynsetsTestCase(TestCase):
                                 Synset('bn:03241725n',
                                        {'bn:00054416n', 'bn:00054417n'}, 2)])
         self.assertEqual(expected, java_word)
+
+    @patch("SetExpander.algorithm.SparqlJSONWrapper.SparqlJSONWrapper.query")
+    def test_comparator(self, mock_query):
+        TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), 'test_files/word_sparql_graph_small.json')
+        json_file = open(TESTDATA_FILENAME, 'r')
+        mock_data = json.load(json_file)
+        json_file.close()
+
+        mock_query.return_value = mock_data
+        word = WordSynsets.from_sparql_json("java", 4, True)
+        compare_synsets(word.synsets)
+
+    def mock_wordsynsets(self, mock_query, file_name):
+        TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), 'test_files/' + file_name)
+        json_file = open(TESTDATA_FILENAME, 'r')
+        mock_data = json.load(json_file)
+        json_file.close()
+
+        mock_query.return_value = mock_data
+        return WordSynsets.from_sparql_json(file_name, 4, True)
+
+    @patch("SetExpander.algorithm.SparqlJSONWrapper.SparqlJSONWrapper.query")
+    def test_find_common(self, mock_query):
+        java = self.mock_wordsynsets(mock_query, 'word_java.json')
+        python = self.mock_wordsynsets(mock_query, 'word_python.json')
+        result = find_common_categories([java, python])
+        print(result[0])
+

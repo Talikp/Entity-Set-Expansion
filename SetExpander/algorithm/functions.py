@@ -4,7 +4,7 @@ import requests
 from SPARQLWrapper import SPARQLWrapper
 from django.conf import settings
 
-from SetExpander.algorithm.WordSynsets import timing, babelnet_url
+from SetExpander.algorithm.WordSynsets import timing, babelnet_url, Synset
 
 
 def sparql_create_query_string(category, source_ids, address):
@@ -62,6 +62,8 @@ def sparql_expand(category, entries, source_ids):
 
 
 def sparql_expand_parallel(category_item):
+    time1 = time.time()
+
     category, source_ids = category_item
     instances = set([])
     address = "http://babelnet.org/rdf/s"
@@ -85,6 +87,9 @@ def sparql_expand_parallel(category_item):
         if entry_name is not None and entry_name.text.startswith(entry_prefix):
             instances.add(entry_name.text.strip(entry_prefix).capitalize())
 
+    time2 = time.time()
+    if settings.MEASURE_TIME:
+        print('{:s} function took {:.3f} ms'.format("sparql_expand_parallel", (time2 - time1) * 1000.0))
     if root.find(namespace + "results") is None:
         return category, None
 
@@ -100,7 +105,7 @@ def find_commmon_categories(word_list):
         connected_synsets = []
         for word in word_list:
             id_containing = None
-            for id in word.ids:
+            for id in word.synsets:
                 if category in id.edges:
                     if id_containing == None:
                         id_containing = id
@@ -110,6 +115,39 @@ def find_commmon_categories(word_list):
             connected_synsets.append(id_containing)
         connection_mapping[category] = connected_synsets
     return connection_mapping
+
+
+@timing
+def find_common_categories(word_list):
+    synsets = list(map(lambda word: word.synsets, word_list))
+    from itertools import product
+    commmons = set()
+    for combination in product(*synsets):
+        commmons.add(compare_synsets(combination))
+
+    return list(commmons)
+
+
+def compare_synsets(synsets):
+    if len(synsets) == 0:
+        return None
+
+    commons = set(synsets[0].edges.nodes)
+    for synset in synsets:
+        if len(commons) == 0:
+            return None
+        commons = commons & synset.edges.nodes
+    if len(commons) == 0:
+        return None
+    commons = list(commons)
+    lowest_category = commons[0]
+    lowest_category_depth = synsets[0].edges.nodes[lowest_category]['depth']
+    for common in commons:
+        if synsets[0].edges.nodes[common]['depth'] < lowest_category_depth:
+            lowest_category = common
+            lowest_category_depth = synsets[0].edges.nodes[common]['depth']
+
+    return lowest_category
 
 
 @timing
