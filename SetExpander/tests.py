@@ -7,7 +7,7 @@ from django.test import TestCase
 
 from SetExpander.algorithm.WordSynsets import WordSynsets, Synset
 from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories, compare_synsets, \
-    find_common_categories
+    find_common_categories, sparql_expand_parallel
 
 
 class SPARQLWrapperMock(object):
@@ -15,10 +15,20 @@ class SPARQLWrapperMock(object):
     def __init__(self, mocked_data):
         self.data = mocked_data
 
+    def setQuery(self, *args):
+        pass
+
+    def addParameter(self, *args):
+        pass
+
     def query(self):
+        print('query')
         return self
 
     def convert(self):
+        return self
+
+    def toxml(self):
         return self.data
 
 
@@ -135,6 +145,17 @@ SELECT ?expand ?entry WHERE {
         categories = find_commmon_categories(word_list)
         self.assertEqual(connection_mapping, categories)
 
+    @patch("SetExpander.algorithm.functions.SPARQLWrapper")
+    def test_sparql_expand(self, mock_sparqlwrapper):
+        item = 'bn:14253335n', [
+            Synset('bn:00048043n', {'bn:00058449n', 'bn:14129567n', 'bn:01246770n', 'bn:14253335n'}, 2183),
+            Synset('bn:01713224n',
+                   {'bn:03782293n', 'bn:01246770n', 'bn:14129567n', 'bn:14253335n', 'bn:00725358n', 'bn:00064652n',
+                    'bn:00044037n', 'bn:01431715n', 'bn:01652181n', 'bn:00182120n'}, 1898)]
+        mock_sparqlwrapper.return_value = SPARQLWrapperMock(ET.tostring(read_xml_test_data('sparql_expand_response.xml')))
+        actual = sparql_expand_parallel(item)
+
+        self.assertEqual(actual[1], {'Smalltalk', 'Lua_(programming_language)', 'C_sharp_(programming_language)', 'Ruby_(programming_language)', 'Python_(programming_language)', 'Ceylon_(programming_language)'})
 
 class WordSynsetsTestCase(TestCase):
 

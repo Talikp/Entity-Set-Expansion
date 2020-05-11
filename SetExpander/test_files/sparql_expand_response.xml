@@ -1,0 +1,48 @@
+<sparql xmlns="http://www.w3.org/2005/sparql-results#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2001/sw/DataAccess/rf1/result2.xsd">
+ <head>
+  <variable name="expand"/>
+  <variable name="entry"/>
+ </head>
+ <results distinct="false" ordered="true">
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s01673672n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/C_Sharp_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s01673672n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/C_Sharp_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s01713224n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Python_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s01928079n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Ruby_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s01928079n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Ruby_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s02196922n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Smalltalk</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s02196922n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Smalltalk</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s02501169n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Ceylon_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s02501169n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Ceylon_(programming_language)</uri></binding>
+  </result>
+  <result>
+   <binding name="expand"><uri>http://babelnet.org/rdf/s03226232n</uri></binding>
+   <binding name="entry"><uri>http://dbpedia.org/resource/Lua_(programming_language)</uri></binding>
+  </result>
+ </results>
+</sparql>

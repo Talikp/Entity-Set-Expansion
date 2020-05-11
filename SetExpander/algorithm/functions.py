@@ -1,3 +1,4 @@
+import time
 from xml.etree import ElementTree as ET
 
 import requests
