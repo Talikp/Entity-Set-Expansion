@@ -7,6 +7,7 @@ from SPARQLWrapper import SPARQLWrapper
 from collections import deque
 from django.conf import settings
 from SetExpander.algorithm.SparqlJSONWrapper import SparqlJSONWrapper
+from SetExpander.algorithm.SPARQLQuery import SPARQLQueryBuilder
 
 babelnet_url = "https://babelnet.io/v5/"
 
@@ -58,49 +59,35 @@ class WordSynsets:
 
     @classmethod
     @timing
-    def from_sparql_json(cls, word, deep=1, named_entities_only=False):
+    def from_sparql_json(cls, word, depth=1, named_entities_only=False):
         MIN_DEPTH = 1
         MAX_DEPTH = 5
         name = str(word)
-        deep = min(deep, MAX_DEPTH)
-        deep = max(deep, MIN_DEPTH)
+        depth = min(depth, MAX_DEPTH)
+        depth = max(depth, MIN_DEPTH)
 
-        synset_type_subquery = """FILTER(
-        ?synsetType="NE"
-    ) ."""
-        synset_type_subquery = synset_type_subquery if named_entities_only else ""
-        categories_subquery = "?synset skos:broader ?X1 . "
-        for level in range(2, deep + 1):
-            categories_subquery += """
-    ?X{} skos:broader ?X{} . """.format(level - 1, level)
+        query_builder = SPARQLQueryBuilder().select("?A", "?B").distinct()
 
-        categories_subquery += """
-    { ?A rdfs:label ?label. ?synset bn-lemon:synsetID ?B }
-    UNION
-    { ?synset bn-lemon:synsetID ?A . ?X1 bn-lemon:synsetID ?B }"""
+        query_builder.filter('?label="{}"@en || ?label="{}"@en || ?label="{}"@en'.format(name.capitalize(), name.lower(), name.upper()))
+        if named_entities_only:
+            query_builder.filter('?synsetType="NE"')
+        query_builder.add("?entries a lemon:LexicalEntry .")\
+            .add("?entries lemon:sense ?sense .")\
+            .add("?sense lemon:reference ?synset .")\
+            .add("?synset a skos:Concept .")\
+            .add("?entries rdfs:label ?label .")\
+            .add("?synset bn-lemon:synsetType ?synsetType .")
 
-        for level in range(2, deep + 1):
-            categories_subquery += """
-    UNION
-    {{ ?X{} bn-lemon:synsetID ?A . ?X{} bn-lemon:synsetID ?B }}""".format(level - 1, level)
+        query_builder.add("?synset skos:broader ?X1 .")
+        query_builder.union("{ ?A rdfs:label ?label. ?synset bn-lemon:synsetID ?B }")
+        query_builder.union("{ ?synset bn-lemon:synsetID ?A . ?X1 bn-lemon:synsetID ?B }")
 
-        query_string = """SELECT DISTINCT ?A ?B WHERE {{
-    ?entries a lemon:LexicalEntry .
-    ?entries lemon:sense ?sense .
-    ?sense lemon:reference ?synset .
-    ?synset a skos:Concept .
-    ?entries rdfs:label ?label .
-    ?synset bn-lemon:synsetType ?synsetType .
-    FILTER(
-        ?label="{}"@en ||
-        ?label="{}"@en ||
-        ?label="{}"@en
-    ) .
-    {}
-    {}
-}}""".format(name.capitalize(), name.lower(), name.upper(), synset_type_subquery, categories_subquery)
+        for level in range(2, depth + 1):
+            query_builder.add("?X{} skos:broader ?X{} .".format(level - 1, level))
+            query_builder.union("{{ ?X{} bn-lemon:synsetID ?A . ?X{} bn-lemon:synsetID ?B }}".format(level - 1, level))
+
         sparql = SparqlJSONWrapper()
-        json_data = sparql.query(query_string)
+        json_data = sparql.query(query_builder.build())
         synset_trees = WordSynsets.parse_json(json_data)
         all_edges = set()
         synsets = []
@@ -151,14 +138,13 @@ class WordSynsets:
     @timing
     def from_sparql(cls, word):
         name = str(word)
-        query_string = """SELECT DISTINCT ?synset ?broader WHERE {{ 
-    ?entries a lemon:LexicalEntry . 
-    ?entries lemon:sense ?sense . 
-    ?sense lemon:reference ?synset . 
-    ?entries rdfs:label "{}"@en . 
-    ?synset a skos:Concept .  
-    ?synset skos:broader ?broader 
-}}""".format(name)
+        query_string = SPARQLQueryBuilder().select("?synset", "?broader").distinct() \
+            .add("?entries a lemon:LexicalEntry .") \
+            .add("?entries lemon:sense ?sense .") \
+            .add("?sense lemon:reference ?synset .") \
+            .add('?entries rdfs:label "{}"@en .'.format(name)) \
+            .add("?synset a skos:Concept .") \
+            .add("?synset skos:broader ?broader").build()
 
         sparql = SPARQLWrapper("https://babelnet.org/sparql/")
         sparql.setQuery(query_string)

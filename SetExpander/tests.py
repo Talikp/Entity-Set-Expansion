@@ -6,8 +6,8 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from SetExpander.algorithm.WordSynsets import WordSynsets, Synset
-from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories, compare_synsets, \
-    find_common_categories, sparql_expand_parallel
+from SetExpander.algorithm.functions import sparql_create_query_string, find_commmon_categories, find_common_categories, \
+    sparql_expand_parallel
 
 
 class SPARQLWrapperMock(object):
@@ -22,7 +22,6 @@ class SPARQLWrapperMock(object):
         pass
 
     def query(self):
-        print('query')
         return self
 
     def convert(self):
@@ -48,21 +47,19 @@ def read_xml_test_data(file_name):
 class SetExpandTestCase(TestCase):
 
     def test_create_query_string(self):
-        expected_str = """PREFIX rdfs: <http://babelnet.org/rdf/> 
-SELECT ?expand ?entry WHERE {
-    ?expand skos:broader <http://babelnet.org/rdf/s14129567n> . 
-{ ?expand skos:related <http://babelnet.org/rdf/s00048043n> }
- UNION { ?expand skos:related <http://babelnet.org/rdf/s01713224n> } . 
-    ?expand skos:exactMatch ?entry . 
-    FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) . 
+        expected_str = """SELECT ?expand ?entry WHERE {
+\t?expand skos:broader <http://babelnet.org/rdf/s14129567n> .
+\t?expand skos:exactMatch ?entry .
+\tFILTER (
+\t\tstrstarts(str(?entry), "http://dbpedia.org/resource/")
+\t) .
+\t{ ?expand skos:related <http://babelnet.org/rdf/s00048043n> }
+\tUNION
+\t{ ?expand skos:related <http://babelnet.org/rdf/s01713224n> }
 } ORDER BY str(?expand) LIMIT 10"""
         category = 'bn:14129567n'
-        synset1 = Synset(id="bn:00048043n", value=2183,
-                         edges={'bn:00058449n', 'bn:14253335n', 'bn:14129567n', 'bn:01246770n'})
-        synset2 = Synset(id='bn:01713224n', value=1898,
-                         edges={'bn:00725358n', 'bn:00064652n', 'bn:14253335n', 'bn:01431715n', 'bn:00182120n',
-                                'bn:03782293n', 'bn:00044037n', 'bn:01652181n', 'bn:01246770n', 'bn:14129567n'})
-        actual_str = sparql_create_query_string(category, [synset1, synset2])
+
+        actual_str = sparql_create_query_string(category, ["bn:00048043n", "bn:01713224n"])
         self.assertEqual(actual_str, expected_str)
 
     def test_find_common_categories(self):
@@ -125,32 +122,16 @@ SELECT ?expand ?entry WHERE {
 
         word_list = [wordsynset1, wordsynset2]
         connection_mapping = {}
-        connection_mapping['bn:14129567n'] = [
-            Synset('bn:00048043n', {'bn:00058449n', 'bn:14129567n', 'bn:01246770n', 'bn:14253335n'}, 2183),
-            Synset('bn:01713224n',
-                   {'bn:03782293n', 'bn:01246770n', 'bn:14129567n', 'bn:14253335n', 'bn:00725358n', 'bn:00064652n',
-                    'bn:00044037n', 'bn:01431715n', 'bn:01652181n', 'bn:00182120n'}, 1898)]
-        connection_mapping['bn:01246770n'] = [
-            Synset('bn:00048043n', {'bn:00058449n', 'bn:14129567n', 'bn:01246770n', 'bn:14253335n'}, 2183),
-            Synset('bn:01713224n',
-                   {'bn:03782293n', 'bn:01246770n', 'bn:14129567n', 'bn:14253335n', 'bn:00725358n', 'bn:00064652n',
-                    'bn:00044037n', 'bn:01431715n', 'bn:01652181n', 'bn:00182120n'}, 1898)]
-        connection_mapping['bn:14253335n'] = [
-            Synset('bn:00048043n', {'bn:00058449n', 'bn:14129567n', 'bn:01246770n', 'bn:14253335n'}, 2183),
-            Synset('bn:01713224n',
-                   {'bn:03782293n', 'bn:01246770n', 'bn:14129567n', 'bn:14253335n', 'bn:00725358n', 'bn:00064652n',
-                    'bn:00044037n', 'bn:01431715n', 'bn:01652181n', 'bn:00182120n'}, 1898)]
+        connection_mapping['bn:14129567n'] = ['bn:00048043n', 'bn:01713224n']
+        connection_mapping['bn:01246770n'] = ['bn:00048043n', 'bn:01713224n']
+        connection_mapping['bn:14253335n'] = ['bn:00048043n', 'bn:01713224n']
 
         categories = find_commmon_categories(word_list)
         self.assertEqual(connection_mapping, categories)
 
     @patch("SetExpander.algorithm.SparqlJSONWrapper.SparqlJSONWrapper.query")
     def test_sparql_expand(self, mock_query):
-        item = 'bn:14253335n', [
-            Synset('bn:00048043n', {'bn:00058449n', 'bn:14129567n', 'bn:01246770n', 'bn:14253335n'}, 2183),
-            Synset('bn:01713224n',
-                   {'bn:03782293n', 'bn:01246770n', 'bn:14129567n', 'bn:14253335n', 'bn:00725358n', 'bn:00064652n',
-                    'bn:00044037n', 'bn:01431715n', 'bn:01652181n', 'bn:00182120n'}, 1898)]
+        item = 'bn:14253335n', ["bn:00048043n", "bn:01713224n"]
         mock_query.return_value = read_json_test_data('sparql_expand_response.json')
         actual = sparql_expand_parallel(item)
 
@@ -166,33 +147,31 @@ class WordSynsetsTestCase(TestCase):
         mock_query.return_value = read_json_test_data('word_sparql_graph_small.json')
         word = WordSynsets.from_sparql_json("java", 4, True)
         query = """SELECT DISTINCT ?A ?B WHERE {
-    ?entries a lemon:LexicalEntry .
-    ?entries lemon:sense ?sense .
-    ?sense lemon:reference ?synset .
-    ?synset a skos:Concept .
-    ?entries rdfs:label ?label .
-    ?synset bn-lemon:synsetType ?synsetType .
-    FILTER(
-        ?label="Java"@en ||
-        ?label="java"@en ||
-        ?label="JAVA"@en
-    ) .
-    FILTER(
-        ?synsetType="NE"
-    ) .
-    ?synset skos:broader ?X1 . 
-    ?X1 skos:broader ?X2 . 
-    ?X2 skos:broader ?X3 . 
-    ?X3 skos:broader ?X4 . 
-    { ?A rdfs:label ?label. ?synset bn-lemon:synsetID ?B }
-    UNION
-    { ?synset bn-lemon:synsetID ?A . ?X1 bn-lemon:synsetID ?B }
-    UNION
-    { ?X1 bn-lemon:synsetID ?A . ?X2 bn-lemon:synsetID ?B }
-    UNION
-    { ?X2 bn-lemon:synsetID ?A . ?X3 bn-lemon:synsetID ?B }
-    UNION
-    { ?X3 bn-lemon:synsetID ?A . ?X4 bn-lemon:synsetID ?B }
+\t?entries a lemon:LexicalEntry .
+\t?entries lemon:sense ?sense .
+\t?sense lemon:reference ?synset .
+\t?synset a skos:Concept .
+\t?entries rdfs:label ?label .
+\t?synset bn-lemon:synsetType ?synsetType .
+\t?synset skos:broader ?X1 .
+\t?X1 skos:broader ?X2 .
+\t?X2 skos:broader ?X3 .
+\t?X3 skos:broader ?X4 .
+\tFILTER (
+\t\t?label="Java"@en || ?label="java"@en || ?label="JAVA"@en
+\t) .
+\tFILTER (
+\t\t?synsetType="NE"
+\t) .
+\t{ ?A rdfs:label ?label. ?synset bn-lemon:synsetID ?B }
+\tUNION
+\t{ ?synset bn-lemon:synsetID ?A . ?X1 bn-lemon:synsetID ?B }
+\tUNION
+\t{ ?X1 bn-lemon:synsetID ?A . ?X2 bn-lemon:synsetID ?B }
+\tUNION
+\t{ ?X2 bn-lemon:synsetID ?A . ?X3 bn-lemon:synsetID ?B }
+\tUNION
+\t{ ?X3 bn-lemon:synsetID ?A . ?X4 bn-lemon:synsetID ?B }
 }"""
         mock_query.assert_called_with(query)
 

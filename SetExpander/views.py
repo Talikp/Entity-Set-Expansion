@@ -4,7 +4,7 @@ from django.shortcuts import render
 from silk.profiling.profiler import silk_profile
 
 from SetExpander.algorithm.WordSynsets import *
-from SetExpander.algorithm.functions import sparql_expand_parallel, find_commmon_categories, get_name_from_ID
+from SetExpander.algorithm.functions import sparql_expand_parallel, find_commmon_categories, get_name_from_ID, find_common_categories
 
 
 def main_page(request):
@@ -24,15 +24,15 @@ def search_result(request):
 
     for entity in entities_list:
         # word = WordSynsets.from_sparql(entity)
-        word = WordSynsets.from_sparql_json(entity)
+        word = WordSynsets.from_sparql_json(entity, 2, True)
         instances_list.append(word)
 
-    categories_mapping = find_commmon_categories(instances_list)
+    categories_mapping = find_common_categories(instances_list)
     with Pool(4) as pool:
         expanded = pool.map(sparql_expand_parallel, categories_mapping.items())
-        for id, founded in expanded:
+        for category_id, founded in expanded:
             if founded:
-                expansion_mapping[get_name_from_ID(id)] = founded
+                expansion_mapping[get_name_from_ID(category_id)] = founded
 
     # for id in categories_mapping:
     #     expanded = sparql_expand(id, entities_list, categories_mapping[id])

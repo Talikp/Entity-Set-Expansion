@@ -5,35 +5,36 @@ import requests
 from SPARQLWrapper import SPARQLWrapper
 from django.conf import settings
 
-from SetExpander.algorithm.WordSynsets import timing, babelnet_url, Synset, SparqlJSONWrapper
+from SetExpander.algorithm.WordSynsets import timing, babelnet_url, Synset, SparqlJSONWrapper, SPARQLQueryBuilder
 
 
-def sparql_create_query_string(category, source_ids):
+def sparql_create_query_string(category, related_ids):
     address = "http://babelnet.org/rdf/s"
 
-    query_string = """PREFIX rdfs: <http://babelnet.org/rdf/> 
-SELECT ?expand ?entry WHERE {{
-    ?expand skos:broader <{}{}> . 
-""".format(address, category.split(":")[1])
+    def extract_id(raw_id):
+        return raw_id.split(":")[1]
 
-    query_string += "\n UNION ".join(
-        map(lambda synset: "{ ?expand skos:related <" + address + synset.id.split(":")[1] + "> }", source_ids))
-    query_string += """ . 
-    ?expand skos:exactMatch ?entry . 
-    FILTER(strstarts(str(?entry), "http://dbpedia.org/resource/")) . 
-} ORDER BY str(?expand) LIMIT 10"""
+    query_builder = SPARQLQueryBuilder().select("?expand", "?entry") \
+        .add("?expand skos:broader <{}{}> .".format(address, extract_id(category))) \
+        .add("?expand skos:exactMatch ?entry .") \
+        .filter('strstarts(str(?entry), "http://dbpedia.org/resource/")') \
+        .orderBy("str(?expand)") \
+        .limit(10)
 
-    return query_string
+    for related_id in related_ids:
+        query_builder.union("{{ ?expand skos:related <{}{}> }}".format(address, extract_id(related_id)))
+
+    return query_builder.build()
 
 
 @timing
-def sparql_expand(category, entries, source_ids):
+def sparql_expand(category, entries, related_ids):
     instances = set([])
     address = "http://babelnet.org/rdf/s"
     limit = len(entries) + 100
     # ?relations, (count(?relations) as ?rel)     ORDER BY DESC(?rel)
 
-    query_string = sparql_create_query_string(category, source_ids)
+    query_string = sparql_create_query_string(category, related_ids)
 
     sparql = SPARQLWrapper("https://babelnet.org/sparql/")
     sparql.setQuery(query_string)  # LIMIT " + str(limit))
@@ -56,7 +57,8 @@ def sparql_expand(category, entries, source_ids):
             instance = "bn:" + instance[len(address):]
             if len(instances) < 6:
                 name = get_name_from_ID(instance)
-                if name.lower() not in entries and instance not in source_ids and len(name) > 0:  # and " " not in name:
+                if name.lower() not in entries and instance not in related_ids and len(
+                        name) > 0:  # and " " not in name:
                     instances.add(name.capitalize())
             else:
                 break
@@ -67,9 +69,9 @@ def sparql_expand(category, entries, source_ids):
 def sparql_expand_parallel(category_item):
     time1 = time.time()
 
-    category, source_ids = category_item
+    category, related_ids = category_item
     instances = set([])
-    query_string = sparql_create_query_string(category, source_ids)
+    query_string = sparql_create_query_string(category, related_ids)
 
     spaqrl = SparqlJSONWrapper()
     json_data = spaqrl.query(query_string)
@@ -110,7 +112,7 @@ def find_commmon_categories(word_list):
                     else:
                         if id_containing.value < id.value:
                             id_containing = id
-            connected_synsets.append(id_containing)
+            connected_synsets.append(id_containing.id)
         connection_mapping[category] = connected_synsets
     return connection_mapping
 
@@ -119,11 +121,14 @@ def find_commmon_categories(word_list):
 def find_common_categories(word_list):
     synsets = list(map(lambda word: word.synsets, word_list))
     from itertools import product
-    commmons = set()
+    commons = set()
     for combination in product(*synsets):
-        commmons.add(compare_synsets(combination))
-
-    return list(commmons)
+        commons.add(compare_synsets(combination))
+    commons.discard(None)
+    result = {}
+    for common in commons:
+        result[common] = []
+    return result
 
 
 def compare_synsets(synsets):
