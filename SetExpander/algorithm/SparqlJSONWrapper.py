@@ -15,8 +15,11 @@ class SparqlJSONWrapper:
             'key': self.key,
             'format': self.format
         }
-        request = requests.get(self.address, params=params)
-        if request.status_code == 200:
-            return request.json()
-
+        try:
+            request = requests.get(self.address, params=params)
+            if request.status_code == 200:
+                return request.json()
+        except ConnectionError:
+            print("Connection Error")
+            return {}
         return {}
