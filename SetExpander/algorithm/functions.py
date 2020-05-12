@@ -15,8 +15,10 @@ def sparql_create_query_string(category, related_ids):
         return raw_id.split(":")[1]
 
     query_builder = SPARQLQueryBuilder().select("?expand", "?entry") \
+        .distinct() \
         .add("?expand skos:broader <{}{}> .".format(address, extract_id(category))) \
         .add("?expand skos:exactMatch ?entry .") \
+        .add('?expand bn-lemon:synsetType "NE" .') \
         .filter('strstarts(str(?entry), "http://dbpedia.org/resource/")') \
         .orderBy("str(?expand)") \
         .limit(10)
@@ -121,14 +123,13 @@ def find_commmon_categories(word_list):
 def find_common_categories(word_list):
     synsets = list(map(lambda word: word.synsets, word_list))
     from itertools import product
-    commons = set()
+    commons = {}
     for combination in product(*synsets):
-        commons.add(compare_synsets(combination))
-    commons.discard(None)
-    result = {}
-    for common in commons:
-        result[common] = []
-    return result
+        category, related_ids = compare_synsets(combination)
+        commons.setdefault(category, set())
+        commons[category].update(related_ids)
+    commons.pop(None, None)
+    return commons
 
 
 def compare_synsets(synsets):
@@ -138,10 +139,10 @@ def compare_synsets(synsets):
     commons = set(synsets[0].edges.nodes)
     for synset in synsets:
         if len(commons) == 0:
-            return None
+            return None, {}
         commons = commons & synset.edges.nodes
     if len(commons) == 0:
-        return None
+        return None, {}
     commons = list(commons)
     lowest_category = commons[0]
     lowest_category_depth = synsets[0].edges.nodes[lowest_category]['depth']
@@ -150,7 +151,11 @@ def compare_synsets(synsets):
             lowest_category = common
             lowest_category_depth = synsets[0].edges.nodes[common]['depth']
 
-    return lowest_category
+    related_ids = set()
+    for synset in synsets:
+        related_ids.update(synset.edges.predecessors(lowest_category))
+
+    return lowest_category, related_ids
 
 
 @timing
