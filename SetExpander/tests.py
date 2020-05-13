@@ -47,16 +47,18 @@ def read_xml_test_data(file_name):
 class SetExpandTestCase(TestCase):
 
     def test_create_query_string(self):
-        expected_str = """SELECT ?expand ?entry WHERE {
+        expected_str = """SELECT DISTINCT ?expand ?entry count(?related) as ?count WHERE {
 \t?expand skos:broader <http://babelnet.org/rdf/s14129567n> .
 \t?expand skos:exactMatch ?entry .
+\t?expand bn-lemon:synsetType "NE" .
+\t?expand skos:related ?related
 \tFILTER (
 \t\tstrstarts(str(?entry), "http://dbpedia.org/resource/")
 \t) .
 \t{ ?expand skos:related <http://babelnet.org/rdf/s00048043n> }
 \tUNION
 \t{ ?expand skos:related <http://babelnet.org/rdf/s01713224n> }
-} ORDER BY str(?expand) LIMIT 10"""
+} GROUP BY ?expand ?entry ORDER BY DESC(?count) LIMIT 10"""
         category = 'bn:14129567n'
 
         actual_str = sparql_create_query_string(category, ["bn:00048043n", "bn:01713224n"])

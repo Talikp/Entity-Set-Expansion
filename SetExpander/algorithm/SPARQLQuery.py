@@ -20,6 +20,7 @@ class SPARQLQueryBuilder:
         self._distinct = False
         self._orderBy = None
         self._limit = None
+        self._groupBy = None
         self._lines = []
         self._filters = []
         self._union = []
@@ -46,8 +47,9 @@ class SPARQLQueryBuilder:
             query += "\tUNION\n".join(map(lambda line: "\t{}\n".format(line), self._union))
 
         query += "}"
-        query += "" if self._orderBy is None else " {} {}".format("ORDER BY", self._orderBy)
-        query += "" if self._limit is None else " {} {}".format("LIMIT", self._limit)
+        query += "" if self._groupBy is None else " GROUP BY {}".format(" ".join(self._groupBy))
+        query += "" if self._orderBy is None else " ORDER BY {}".format(self._orderBy)
+        query += "" if self._limit is None else " LIMIT {}".format(self._limit)
 
         return query
 
@@ -83,4 +85,9 @@ class SPARQLQueryBuilder:
     @only_once
     def orderBy(self, orderBy):
         self._orderBy = orderBy
+        return self
+
+    @only_once
+    def groupBy(self, *args):
+        self._groupBy = args
         return self

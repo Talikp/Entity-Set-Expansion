@@ -14,13 +14,15 @@ def sparql_create_query_string(category, related_ids):
     def extract_id(raw_id):
         return raw_id.split(":")[1]
 
-    query_builder = SPARQLQueryBuilder().select("?expand", "?entry") \
+    query_builder = SPARQLQueryBuilder().select("?expand", "?entry", "count(?related) as ?count") \
         .distinct() \
         .add("?expand skos:broader <{}{}> .".format(address, extract_id(category))) \
         .add("?expand skos:exactMatch ?entry .") \
         .add('?expand bn-lemon:synsetType "NE" .') \
+        .add('?expand skos:related ?related') \
         .filter('strstarts(str(?entry), "http://dbpedia.org/resource/")') \
-        .orderBy("str(?expand)") \
+        .groupBy("?expand", "?entry") \
+        .orderBy("DESC(?count)") \
         .limit(10)
 
     for related_id in related_ids:
@@ -70,7 +72,6 @@ def sparql_expand(category, entries, related_ids):
 
 def sparql_expand_parallel(category_item):
     time1 = time.time()
-
     category, related_ids = category_item
     instances = set([])
     query_string = sparql_create_query_string(category, related_ids)
