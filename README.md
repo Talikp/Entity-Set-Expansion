@@ -42,4 +42,4 @@ There are few configurable settings to help with development.
 
 MEASURE_TIME - print execution time of the functions annotated with @timing
 
-SILKY_PYTHON_PROFILER, SILKY_PYTHON_PROFILER_BINARY, SILKY_PYTHON_PROFILER_RESULT_PATH - settings related with silk plugin, which keep stacktrace to optimize services, when enabled can be executed at [http://127.0.0.1:8000/silk/]([http://127.0.0.1:8000/silk/])
+SILKY_PYTHON_PROFILER, SILKY_PYTHON_PROFILER_BINARY, SILKY_PYTHON_PROFILER_RESULT_PATH - settings related with silk plugin, which keep stacktrace to optimize services, when enabled can be executed at [http://127.0.0.1:8000/silk/](http://127.0.0.1:8000/silk/)
